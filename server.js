@@ -1,49 +1,50 @@
 const WebSocket = require('ws');
-const axios = require('axios');
+const express = require('express');
+const app = express();
 
-// Cria o servidor WebSocket
+// Cria o servidor WebSocket para o React Native se conectar
 const wss = new WebSocket.Server({ port: 8080 });
 
-console.log('WebSocket Server Rodando na porta 8080...');
+console.log('Servidor WebSocket para o React Native na porta 8080');
 
-// Função que envia dados para o ESP32 e aguarda a resposta
-async function enviarParaESP32(dados) {
-  const esp32Ip = 'http://192.168.15.32'; // Endereço IP do ESP32
-  const esp32Port = 80; // Porta padrão HTTP
+// URL do WebSocket do ESP32
+const esp32WebSocket = new WebSocket('ws://192.168.15.32:5088'); // Substitua com o IP do seu ESP32
 
-  try {
-    // Envia os dados para o ESP32 via requisição HTTP POST
-    const resposta = await axios.post(`${esp32Ip}:${esp32Port}/comando`, { dados: dados });
+// Conectar ao WebSocket do ESP32
+esp32WebSocket.on('open', () => {
+  console.log('Conectado ao WebSocket do ESP32');
+});
 
-    // Retorna a resposta que o ESP32 deu
-    return resposta.data;
-  } catch (error) {
-    console.error('Erro ao se comunicar com o ESP32:', error);
-    return { erro: 'Falha na comunicação com o ESP32' };
-  }
-}
-
-// Função que lida com cada conexão WebSocket
+// Quando um cliente React Native se conectar ao servidor Node.js
 wss.on('connection', (ws) => {
-  console.log('Novo cliente conectado');
+  console.log('Cliente React Native conectado');
 
-  // Quando receber uma mensagem do cliente
-  ws.on('message', async (message) => {
-    console.log('Mensagem recebida do cliente:', message.toString());
-
-    const respostaEsp32 = await enviarParaESP32(message.toString());
-
-    // Envia a resposta do ESP32 de volta ao cliente WebSocket
-    ws.send(JSON.stringify(respostaEsp32));
+  // Quando o cliente envia uma mensagem (comando para o ESP32)
+  ws.on('message', (message) => {
+    console.log(`Mensagem do cliente: ${message}`);
+    
+    // Envia o comando para o ESP32 (ex: "1" para ligar, "0" para desligar)
+    if (esp32WebSocket.readyState === WebSocket.OPEN) {
+      esp32WebSocket.send(message);
+    } else {
+      console.log('Erro: Não foi possível enviar mensagem ao ESP32');
+    }
   });
 
-  // Quando a conexão WebSocket for fechada
+  // Recebe a resposta do ESP32 e envia de volta para o cliente
+  esp32WebSocket.on('message', (response) => {
+    console.log(`Resposta do ESP32: ${response}`);
+    
+    // Envia a resposta de volta para o cliente React Native
+    ws.send(response);
+  });
+
+  // Quando o cliente desconectar
   ws.on('close', () => {
     console.log('Cliente desconectado');
   });
+});
 
-  // Quando houver um erro na conexão WebSocket
-  ws.on('error', (error) => {
-    console.error('Erro na conexão WebSocket:', error);
-  });
+app.listen(3000, () => {
+  console.log('Servidor Node.js rodando na porta 3000');
 });
