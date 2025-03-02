@@ -12,6 +12,7 @@ async function enviarParaESP32(dados) {
 
   try {
     // Envia os dados para o ESP32 via requisição HTTP (pode ser GET ou POST)
+    console.log('caiu no try', esp32Ip)
     const resposta = await axios.post(esp32Ip, { dados: dados });
 
     // Retorna a resposta que o ESP32 deu
