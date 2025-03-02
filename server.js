@@ -45,6 +45,6 @@ wss.on('connection', (ws) => {
   });
 });
 
-app.listen(3000, () => {
+app.listen(5045, () => {
   console.log('Servidor Node.js rodando na porta 3000');
 });
