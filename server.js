@@ -8,7 +8,7 @@ console.log('WebSocket Server Rodando na porta 8080...');
 
 // Função que envia dados para o ESP32 e aguarda a resposta
 async function enviarParaESP32(dados) {
-  const esp32Ip = '192.168.15.32'; // Substitua pelo IP da sua placa ESP32
+  const esp32Ip = 'http://192.168.15.32'; // Agora com o http://
 
   try {
     // Envia os dados para o ESP32 via requisição HTTP (pode ser GET ou POST)
@@ -21,6 +21,7 @@ async function enviarParaESP32(dados) {
     return { erro: 'Falha na comunicação com o ESP32' };
   }
 }
+
 
 // Função que lida com cada conexão WebSocket
 wss.on('connection', (ws) => {
