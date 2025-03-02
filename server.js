@@ -13,7 +13,6 @@ async function enviarParaESP32(dados) {
 
   try {
     // Envia os dados para o ESP32 via requisição HTTP POST
-    console.log('caiu no try')
     const resposta = await axios.post(`${esp32Ip}:${esp32Port}/comando`, { dados: dados });
 
     // Retorna a resposta que o ESP32 deu
@@ -32,8 +31,8 @@ wss.on('connection', (ws) => {
   ws.on('message', async (message) => {
     console.log('Mensagem recebida do cliente:', message);
 
-    // Converte a mensagem de buffer para string
-    const mensagem = message.toString();
+    // Se a mensagem for um buffer, converta para string
+    const mensagem = message instanceof Buffer ? message.toString() : message;
 
     // Envia os dados recebidos para o ESP32
     const respostaEsp32 = await enviarParaESP32(mensagem);
