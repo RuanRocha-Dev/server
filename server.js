@@ -29,13 +29,9 @@ wss.on('connection', (ws) => {
 
   // Quando receber uma mensagem do cliente
   ws.on('message', async (message) => {
-    console.log('Mensagem recebida do cliente:', message);
+    console.log('Mensagem recebida do cliente:', message.toString());
 
-    // Se a mensagem for um buffer, converta para string
-    const mensagem = message instanceof Buffer ? message.toString() : message;
-
-    // Envia os dados recebidos para o ESP32
-    const respostaEsp32 = await enviarParaESP32(mensagem);
+    const respostaEsp32 = await enviarParaESP32(message.toString());
 
     // Envia a resposta do ESP32 de volta ao cliente WebSocket
     ws.send(JSON.stringify(respostaEsp32));
