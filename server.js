@@ -64,6 +64,7 @@ app.post('/enviar-comando', (req, res) => {
     }
 
     // Envia o comando para a ESP32
+    console.log(`Comando recebido: ${comando}`);
     enviarMensagemParaESP32(comando);
 
     // Adiciona a resposta à fila para ser retornada assim que a ESP32 enviar "stop"
