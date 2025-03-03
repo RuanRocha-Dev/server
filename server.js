@@ -43,8 +43,6 @@ wss.on('connection', function connection(ws) {
     });
 });
 
-console.log('Servidor WebSocket rodando na porta 8080');
-
 // Função para enviar uma mensagem para a ESP32 via WebSocket
 function enviarMensagemParaESP32(mensagem) {
     if (esp32Socket) {
@@ -57,21 +55,20 @@ function enviarMensagemParaESP32(mensagem) {
 
 // Rota HTTP para receber comandos externos e repassá-los para a ESP32
 app.post('/enviar-comando', (req, res) => {
-    const comando = req.body;  // Agora a mensagem é apenas o comando, "0" ou "1"
-    
+    const comando = req.body;  // Agora o comando é apenas o valor, sem o JSON
+
     if (comando !== "0" && comando !== "1") {
         return res.status(400).json({ error: 'Comando inválido. Use 0 ou 1.' });
     }
 
     // Envia o comando para a ESP32
-    console.log(`Comando recebido: ${comando}`);
     enviarMensagemParaESP32(comando);
 
     // Adiciona a resposta à fila para ser retornada assim que a ESP32 enviar "stop"
     responseQueue.push(() => {
         res.json({ status: 'Comando executado pela ESP32', comando: comando });
     });
-
+    
     res.json({ status: 'Comando enviado para a ESP32, aguardando resposta...' });
 });
 
