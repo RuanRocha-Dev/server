@@ -55,14 +55,15 @@ function enviarMensagemParaESP32(mensagem) {
 
 // Rota HTTP para receber comandos externos e repassá-los para a ESP32
 app.post('/enviar-comando', (req, res) => {
-    const comando = req.body;  // Agora o comando é apenas o valor, sem o JSON
+    const { comando } = req.body;  // Agora extraímos o valor do comando
 
-    if (comando !== "0" && comando !== "1") {
+    // Verificar se o comando é 1 ou 0
+    if (comando !== 0 && comando !== 1) {
         return res.status(400).json({ error: 'Comando inválido. Use 0 ou 1.' });
     }
 
     // Envia o comando para a ESP32
-    enviarMensagemParaESP32(comando);
+    enviarMensagemParaESP32(comando.toString());
 
     // Adiciona a resposta à fila para ser retornada assim que a ESP32 enviar "stop"
     responseQueue.push(() => {
