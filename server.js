@@ -5,14 +5,14 @@ const WebSocket = require('ws');
 const app = express();
 const port = 3000;
 
-// Middleware para aceitar JSON no corpo da requisição
-app.use(express.json());
+// Middleware para aceitar dados no corpo da requisição (não será mais JSON)
+app.use(express.text());  // Usamos express.text() para receber strings simples
 
 // Criação do servidor WebSocket
 const wss = new WebSocket.Server({ port: 8080 });
 
 let esp32Socket = null; // Variável para armazenar a conexão com a ESP32
-let responseQueue = []; // Fila para armazenar respostas e enviar ao aplicativo
+let responseQueue = []; // Fila para armazenar respostas e enviar ao aplicativo externo
 
 // Quando a ESP32 se conectar ao WebSocket
 wss.on('connection', function connection(ws) {
@@ -23,19 +23,20 @@ wss.on('connection', function connection(ws) {
 
     // Quando uma mensagem for recebida da ESP32
     ws.on('message', function incoming(message) {
+        message = message.toString();
         console.log('Mensagem recebida da ESP32:', message);
 
         // Se a ESP32 enviar "stop", enviar a resposta ao aplicativo externo
         if (message === 'stop') {
-            const response = responseQueue.shift();
+            const response = responseQueue.shift();  // Retira a resposta da fila
             if (response) {
                 console.log('Enviando resposta ao aplicativo externo:', response);
-                response(res);
+                response();  // Envia a resposta ao cliente HTTP
             }
         }
     });
 
-    // Quando o cliente (ESP32) se desconectar
+    // Quando a ESP32 se desconectar
     ws.on('close', () => {
         console.log('Cliente (ESP32) desconectado');
         esp32Socket = null; // Limpar a variável quando a ESP32 se desconectar
@@ -56,20 +57,22 @@ function enviarMensagemParaESP32(mensagem) {
 
 // Rota HTTP para receber comandos externos e repassá-los para a ESP32
 app.post('/enviar-comando', (req, res) => {
-    const { comando } = req.body;  // Espera um JSON com a chave 'comando'
+    const comando = req.body.trim();  // O comando vem diretamente como texto, sem JSON
     
-    if (comando !== 0 && comando !== 1) {
-        return res.status(400).json({ error: 'Comando inválido. Use 0 ou 1.' });
+    if (comando !== '0' && comando !== '1') {
+        return res.status(400).json({ error: 'Comando inválido. Use "0" ou "1".' });
     }
 
     // Envia o comando para a ESP32
-    enviarMensagemParaESP32(comando.toString());
+    enviarMensagemParaESP32(comando);
 
     // Adiciona a resposta à fila para ser retornada assim que a ESP32 enviar "stop"
-    responseQueue.push((res) => {
+    responseQueue.push(() => {
+        // Quando a resposta estiver pronta, envia para o cliente HTTP
         res.json({ status: 'Comando executado pela ESP32', comando: comando });
     });
     
+    // Responde imediatamente ao cliente HTTP dizendo que o comando foi enviado para a ESP32
     res.json({ status: 'Comando enviado para a ESP32, aguardando resposta...' });
 });
 
