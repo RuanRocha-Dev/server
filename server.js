@@ -3,7 +3,9 @@ const WebSocket = require('ws');
 // Crie um servidor WebSocket na porta 8080
 const wss = new WebSocket.Server({ port: 8080 });
 
-// Quando um cliente (como a ESP32) se conecta
+// Flag para evitar loop de resposta
+let isFirstMessage = true;
+
 wss.on('connection', function connection(ws) {
     console.log('Cliente conectado (ESP32)');
 
@@ -14,9 +16,11 @@ wss.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
         console.log('Mensagem recebida da ESP32:', message);
         
-        // Aqui, o servidor pode enviar de volta uma resposta (se necessário)
-        // Exemplo: echo da mensagem
-        ws.send('Comando recebido e refletido de volta!');
+        // Apenas envie uma resposta se for a primeira vez
+        if (isFirstMessage) {
+            ws.send('Comando recebido e refletido de volta!');
+            isFirstMessage = false; // Marque como já tendo respondido uma vez
+        }
     });
 
     // Quando o cliente (ESP32) se desconectar
