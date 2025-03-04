@@ -3,7 +3,7 @@ const WebSocket = require('ws');
 
 // Criação do servidor Express (HTTP)
 const app = express();
-const port = 3000;
+const port = 3001;
 
 // Middleware para aceitar JSON no corpo da requisição
 app.use(express.json());
@@ -67,10 +67,13 @@ app.post('/enviar-comando', (req, res) => {
 
     // Adiciona a resposta à fila para ser retornada assim que a ESP32 enviar "stop"
     responseQueue.push(() => {
-        res.json({ status: 'Comando executado pela ESP32', comando: comando });
+        if (!res.headersSent) {  // Verifica se já foi enviada alguma resposta
+            res.json({ status: 'Comando executado pela ESP32', comando: comando });
+        }
     });
-    
-    res.json({ status: 'Comando enviado para a ESP32, aguardando resposta...' });
+
+    // Retorna 202 Accepted informando que o comando foi recebido, mas ainda não processado
+    res.status(202).json({ status: 'Comando recebido, aguardando confirmação da ESP32...' });
 });
 
 // Inicia o servidor HTTP
